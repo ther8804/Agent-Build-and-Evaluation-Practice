@@ -10,6 +10,7 @@ langgraph.json 이 아래 `agent` 그래프를 참조한다.
 
 import json
 import os
+import shutil
 from pathlib import Path
 
 import dotenv
@@ -21,6 +22,9 @@ from deepagents.backends import LocalShellBackend
 # 프레임워크와 동일하게 계산하기 위해 그대로 가져다 쓴다.
 from deepagents._models import get_model_identifier, get_model_provider
 from langchain.chat_models import init_chat_model
+
+# 로컬 모듈: 외부 서비스 커넥터(Slack / Telegram / Email)
+from connectors import build_messaging_tools
 
 # ---------------------------------------------------------------------------
 # 환경변수 & 모델
@@ -47,6 +51,9 @@ model = init_chat_model(
     api_key=api_key,
     base_url=base_url,
     streaming=True,
+    # gpt-5 계열은 추론 시간이 길어 사소한 질문도 수십 초 걸린다. low 로 두면 호출당
+    # 지연이 크게 줄어 메신저 응답이 빨라진다. 복잡한 추론이 필요하면 medium/high 로.
+    reasoning_effort="low",
     http_client=insecure_http_client,
     http_async_client=insecure_http_async_client,
 )
@@ -59,9 +66,23 @@ model = init_chat_model(
 WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "workspace")).expanduser().resolve()
 WORKSPACE.mkdir(parents=True, exist_ok=True)
 
-# 스킬 디렉터리(workspace/skills). 각 스킬은 SKILL.md 를 가진 하위 폴더다.
-# 폴더가 없으면 스킬 로드 시 경고가 뜨므로 미리 만들어 둔다.
-(WORKSPACE / "skills").mkdir(parents=True, exist_ok=True)
+# 스킬 디렉터리(workspace/skills). 각 스킬은 SKILL.md(+ 스크립트)를 가진 하위 폴더다.
+# 프로젝트의 example_skills/ 를 workspace/skills 로 매 실행 시 동기화한다(파일 덮어씀).
+# → 예시 스킬을 업데이트하면 자동 반영된다. 커스텀 스킬은 example_skills 밖의
+#   다른 이름으로 workspace/skills 에 만들면 이 동기화의 영향을 받지 않는다.
+_skills_dir = WORKSPACE / "skills"
+_skills_dir.mkdir(parents=True, exist_ok=True)
+_example_skills = Path("example_skills")
+if _example_skills.is_dir():
+    for _src in _example_skills.iterdir():
+        if _src.is_dir():
+            shutil.copytree(_src, _skills_dir / _src.name, dirs_exist_ok=True)
+
+# 이메일 트리거 규칙 파일(workspace/email_triggers.json). 없으면 빈 배열로 만들어
+# 두어(스킬 set-email-triggers 로 CRUD) 위치를 발견하기 쉽게 한다.
+_triggers = WORKSPACE / "email_triggers.json"
+if not _triggers.exists():
+    _triggers.write_text("[]\n", encoding="utf-8")
 
 # 메모리 파일(workspace/AGENTS.md). 에이전트가 사용자의 선호·피드백·역할 등을
 # edit_file 로 이 파일에 스스로 기록하고, 다음 세션에 자동으로 불러온다.
@@ -152,6 +173,7 @@ def build_connector_tools() -> list:
     tools: list = []
     tools += _web_search_tools()
     tools += _mcp_tools()
+    tools += build_messaging_tools()  # Slack / Telegram / Email (connectors.py)
     return tools
 
 
@@ -239,18 +261,44 @@ register_harness_profile(_profile_key, HarnessProfile(base_system_prompt=SYSTEM_
 
 # deep agent 생성 (langgraph.json 이 이 `agent` 그래프를 참조).
 # system_prompt 를 넘기지 않으므로 위에서 등록한 SYSTEM_PROMPT 가 그대로 사용된다.
-agent = create_deep_agent(
-    model=model,
-    tools=connector_tools,
-    backend=backend,
-    skills=SKILL_SOURCES,
-    memory=MEMORY_SOURCES,
-)
+def build_agent(checkpointer=None):
+    """deep agent 그래프를 만든다.
+
+    gateway.py 등 외부에서 checkpointer(InMemorySaver 등)를 넣어 대화별 문맥을
+    유지하며 재사용할 수 있다. checkpointer=None 이면 langgraph dev 가 자체 지속성을
+    제공한다.
+    """
+    return create_deep_agent(
+        model=model,
+        tools=connector_tools,
+        backend=backend,
+        skills=SKILL_SOURCES,
+        memory=MEMORY_SOURCES,
+        checkpointer=checkpointer,
+    )
+
+
+agent = build_agent()
 
 
 if __name__ == "__main__":
     import subprocess
     import sys
+
+    # 메신저 커넥터가 '실제로 연결되는' 채널이 있으면 공용 게이트웨이를 백그라운드로
+    # 함께 띄운다(env 만 있는 게 아니라 라이브 연결 확인까지 통과한 채널만 실행).
+    # 채널이 하나도 없으면 게이트웨이 에이전트는 만들어지지 않는다.
+    try:
+        import gateway
+        from langgraph.checkpoint.memory import InMemorySaver
+
+        channels = gateway.start_in_background(
+            lambda: build_agent(checkpointer=InMemorySaver())
+        )
+        if channels:
+            print(f"게이트웨이 실행 중 → {', '.join(channels)} (메신저에서 에이전트 사용 가능)")
+    except Exception as e:  # 게이트웨이가 실패해도 Studio UI 는 떠야 한다
+        print(f"게이트웨이 시작 실패(무시하고 UI만 실행): {e}")
 
     # 이 파일을 직접 실행하면 langgraph dev 서버를 띄우고
     # LangGraph Studio(langchain deep agent UI)를 브라우저에서 연다.
