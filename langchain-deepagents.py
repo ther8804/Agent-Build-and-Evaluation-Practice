@@ -72,9 +72,9 @@ WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "workspace")).expanduser().resolve()
 WORKSPACE.mkdir(parents=True, exist_ok=True)
 
 # 스킬 디렉터리(workspace/skills). 각 스킬은 SKILL.md(+ 스크립트)를 가진 하위 폴더다.
-# 프로젝트의 example_skills/ 를 workspace/skills 로 매 실행 시 동기화한다.
-# → 예시 스킬을 업데이트하면 자동 반영된다. 커스텀 스킬은 example_skills 밖의
-#   다른 이름으로 workspace/skills 에 만들면 이 동기화의 영향을 받지 않는다.
+# git 으로 관리되는 workspace_seed/skills/ 를 workspace/skills 로 매 실행 시 동기화한다.
+# → 시드 스킬을 업데이트하면 자동 반영된다. 이 시드를 거치지 않는 일회성 스킬은
+#   workspace_seed 밖의 다른 이름으로 workspace/skills 에 직접 만들면 된다(동기화 영향 없음).
 #
 # 주의: shutil.copytree 는 내용이 같아도 매번 파일을 다시 써 mtime 을 바꾼다.
 # langgraph dev 는 workspace/ 를 감시(watchfiles)하므로, 그럴 경우 import→동기화→
@@ -98,9 +98,9 @@ def _sync_tree(src: Path, dst: Path) -> None:
 
 _skills_dir = WORKSPACE / "skills"
 _skills_dir.mkdir(parents=True, exist_ok=True)
-_example_skills = Path("example_skills")
-if _example_skills.is_dir():
-    for _src in _example_skills.iterdir():
+_seed_skills = Path("workspace_seed/skills")
+if _seed_skills.is_dir():
+    for _src in _seed_skills.iterdir():
         if _src.is_dir():
             _sync_tree(_src, _skills_dir / _src.name)
 
@@ -112,16 +112,22 @@ if not _triggers.exists():
 
 # 메모리 파일(workspace/AGENTS.md). 에이전트가 사용자의 선호·피드백·역할 등을
 # edit_file 로 이 파일에 스스로 기록하고, 다음 세션에 자동으로 불러온다.
-# edit_file 은 기존 파일을 대상으로 하므로, 없으면 최소 템플릿으로 미리 만들어 둔다.
+# 초기 템플릿은 git 으로 관리되는 workspace_seed/AGENTS.md 를 쓴다(없을 때만 주입 =
+# seed-once). 이미 있으면 건드리지 않아, 에이전트가 런타임에 쌓은 기억이 보존된다.
+# 시드 파일이 없으면 최소 인라인 템플릿으로 대체한다.
 _agents_md = WORKSPACE / "AGENTS.md"
 if not _agents_md.exists():
-    _agents_md.write_text(
-        "# Agent Memory\n\n"
-        "이 파일은 에이전트가 사용자에 대해 학습한 내용을 기록하는 장기 메모리다.\n"
-        "(선호, 반복되는 피드백, 역할 정의, 도구 사용에 필요한 정보 등)\n\n"
-        "## User\n\n## Preferences\n\n## Notes\n",
-        encoding="utf-8",
-    )
+    _seed_md = Path("workspace_seed/AGENTS.md")
+    if _seed_md.is_file():
+        _agents_md.write_text(_seed_md.read_text(encoding="utf-8"), encoding="utf-8")
+    else:
+        _agents_md.write_text(
+            "# Agent Memory\n\n"
+            "이 파일은 에이전트가 사용자에 대해 학습한 내용을 기록하는 장기 메모리다.\n"
+            "(선호, 반복되는 피드백, 역할 정의, 도구 사용에 필요한 정보 등)\n\n"
+            "## User\n\n## Preferences\n\n## Notes\n",
+            encoding="utf-8",
+        )
 
 # LocalShellBackend = 실제 파일시스템 조작 + 셸 실행(execute).
 # - virtual_mode=True: 파일 도구의 경로를 workspace 기준으로 제한(.. 탈출 방지 가드레일).
