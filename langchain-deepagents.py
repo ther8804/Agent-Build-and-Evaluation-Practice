@@ -6,6 +6,12 @@
 
 이 파일을 직접 실행하면 LangGraph Studio(deep agent UI)가 뜬다.
 langgraph.json 이 아래 `agent` 그래프를 참조한다.
+
+실행 환경에 따라 자동으로 동작이 달라진다:
+- 로컬: `langgraph dev` 로 서버를 띄우고 브라우저로 Studio 를 연다.
+- 원격(Codespaces/devcontainer/Gitpod): 로컬 브라우저가 없고 기본 포트포워딩이
+  Studio 에서 안 붙으므로, `--tunnel`(Cloudflare) 로 공개 URL 을 만들어 Studio 가
+  그 URL 로 직접 연결하게 한다. LANGGRAPH_TUNNEL=0/1 로 강제 off/on 가능.
 """
 
 import json
@@ -281,6 +287,72 @@ def build_agent(checkpointer=None):
 agent = build_agent()
 
 
+# ---------------------------------------------------------------------------
+# 실행 환경 감지 & langgraph dev 커맨드 조립
+# ---------------------------------------------------------------------------
+# 원격(Codespaces/devcontainer/Gitpod)에서는 로컬 브라우저가 없고, GitHub 기본
+# 포트포워딩(*.app.github.dev)이 private 인증 + 레이턴시 때문에 LangGraph Studio
+# (smith.langchain.com)에서 baseUrl로 붙지 않는다. 이런 환경을 감지하면
+# `langgraph dev --tunnel` 로 Cloudflare 터널을 열어 공개 URL을 만들고, Studio가
+# 그 URL로 직접 연결하도록 한다(CORS/공개접근 자동 처리).
+def _is_remote_env() -> bool:
+    """로컬 브라우저가 없고 터널이 필요한 원격 개발 환경인지 판별한다."""
+    return (
+        os.getenv("CODESPACES", "").lower() == "true"
+        or bool(os.getenv("CODESPACE_NAME"))
+        or bool(os.getenv("GITPOD_WORKSPACE_ID"))
+        or os.getenv("REMOTE_CONTAINERS", "").lower() == "true"
+    )
+
+
+def _env_bool(name: str):
+    """불리언 성격의 환경변수를 읽는다. 미설정이면 None(= 자동판단에 위임)."""
+    v = os.getenv(name)
+    if v is None:
+        return None
+    return v.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _flag_present(args: list, name: str) -> bool:
+    """passthrough 인자에 이미 해당 플래그가 있는지(값 포함 형태까지) 확인한다."""
+    return any(a == name or a.startswith(name + "=") for a in args)
+
+
+def _build_dev_command(passthrough: list) -> tuple:
+    """`langgraph dev` 실행 커맨드와 터널 사용 여부를 조립한다.
+
+    - LANGGRAPH_TUNNEL 로 강제 on/off 가능(미설정이면 원격 환경 자동 감지).
+    - LANGGRAPH_PORT / LANGGRAPH_HOST 로 바인딩 조정 가능.
+    - 스크립트에 넘긴 추가 인자(passthrough)는 그대로 전달하며, 중복 플래그는 넣지 않는다.
+    """
+    tunnel_override = _env_bool("LANGGRAPH_TUNNEL")
+    use_tunnel = _is_remote_env() if tunnel_override is None else tunnel_override
+    # 사용자가 직접 --tunnel 을 넘겼다면 그것도 존중한다.
+    if _flag_present(passthrough, "--tunnel"):
+        use_tunnel = True
+
+    cmd = ["langgraph", "dev"]
+    if not _flag_present(passthrough, "--allow-blocking"):
+        cmd.append("--allow-blocking")
+    if use_tunnel and not _flag_present(passthrough, "--tunnel"):
+        cmd.append("--tunnel")
+    # 터널이거나 원격이면 로컬 브라우저 자동 열기가 무의미하다(헤드리스).
+    if (use_tunnel or _is_remote_env()) and not _flag_present(
+        passthrough, "--no-browser"
+    ):
+        cmd.append("--no-browser")
+
+    port = os.getenv("LANGGRAPH_PORT")
+    if port and not _flag_present(passthrough, "--port"):
+        cmd += ["--port", port]
+    host = os.getenv("LANGGRAPH_HOST")
+    if host and not _flag_present(passthrough, "--host"):
+        cmd += ["--host", host]
+
+    cmd += passthrough
+    return cmd, use_tunnel
+
+
 if __name__ == "__main__":
     import subprocess
     import sys
@@ -300,15 +372,26 @@ if __name__ == "__main__":
     except Exception as e:  # 게이트웨이가 실패해도 Studio UI 는 떠야 한다
         print(f"게이트웨이 시작 실패(무시하고 UI만 실행): {e}")
 
-    # 이 파일을 직접 실행하면 langgraph dev 서버를 띄우고
-    # LangGraph Studio(langchain deep agent UI)를 브라우저에서 연다.
+    # 이 파일을 직접 실행하면 langgraph dev 서버를 띄우고 LangGraph Studio를 연다.
     # langgraph dev 는 langgraph.json 을 읽어 위의 `agent` 그래프를 서빙한다.
-    print(
-        "Deep Agent UI(LangGraph Studio)를 시작합니다... 잠시 후 브라우저가 열립니다."
-    )
+    # 스크립트에 넘긴 추가 인자(예: --tunnel, --port 8000)는 그대로 전달된다:
+    #   uv run python langchain-deepagents.py --tunnel
+    cmd, use_tunnel = _build_dev_command(sys.argv[1:])
+
     print(f"작업 공간: {WORKSPACE}")
+    if use_tunnel:
+        print("원격 환경 감지 — Cloudflare 터널(--tunnel)로 공개 URL을 생성합니다.")
+        print(
+            "  콘솔에 출력되는 https://<...>.trycloudflare.com 기반 Studio 링크를 "
+            "외부 브라우저에서 열면 됩니다."
+        )
+        print("  (터널을 끄려면 LANGGRAPH_TUNNEL=0, 강제로 켜려면 LANGGRAPH_TUNNEL=1)")
+    else:
+        print("Deep Agent UI(LangGraph Studio)를 시작합니다... 잠시 후 브라우저가 열립니다.")
+    print(f"$ {' '.join(cmd)}")
+
     try:
-        subprocess.run(["langgraph", "dev", "--allow-blocking"], check=True)
+        subprocess.run(cmd, check=True)
     except FileNotFoundError:
         print(
             "langgraph 명령을 찾을 수 없습니다. 먼저 'uv sync' 를 실행한 뒤 "
