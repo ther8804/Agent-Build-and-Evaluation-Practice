@@ -12,8 +12,8 @@
 
 ## [추출 실패] 목록
 
-- Large Language Models (LLMs) and Generative AI in Cybersecurity and Privacy: A Survey of Dual-Use Risks, AI-Generated Malware, Explainability, and Defensive Strategies (2607.06963v1) — 요약 실패: No module named 'pydantic_core._pydantic_core' → 요약 제외 · https://arxiv.org/abs/2607.06963v1
-- Determinants and Limits of LLM Security-Tool Orchestration: A Study with HexStrike-AI (2607.02873v1) — 요약 실패: No module named 'pydantic_core._pydantic_core' → 요약 제외 · https://arxiv.org/abs/2607.02873v1
+- Large Language Models (LLMs) and Generative AI in Cybersecurity and Privacy: A Survey of Dual-Use Risks, AI-Generated Malware, Explainability, and Defensive Strategies (2607.06963v1) — 요약 실패: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-or-v1*************************************************************9eb6. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401} → 요약 제외 · https://arxiv.org/abs/2607.06963v1
+- Determinants and Limits of LLM Security-Tool Orchestration: A Study with HexStrike-AI (2607.02873v1) — 요약 실패: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-or-v1*************************************************************9eb6. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401} → 요약 제외 · https://arxiv.org/abs/2607.02873v1
 
 ---
 
