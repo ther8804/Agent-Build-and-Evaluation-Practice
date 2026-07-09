@@ -48,7 +48,7 @@ class Config:
 
     # --- 모델 (환경변수에서 로드) ---
     openai_api_key: str | None = None
-    openai_base_url: str = "https://api.openai.com/v1"
+    openai_base_url: str = "https://openrouter.ai/api/v1"
     openai_model: str = "gpt-4o-mini"
     # LLM-as-a-Judge / meta-harness 개선자 모델 (기본: openai_model 과 동일)
     openai_judge_model: str = ""
