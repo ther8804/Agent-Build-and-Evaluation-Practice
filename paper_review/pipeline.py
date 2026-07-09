@@ -27,6 +27,7 @@ from .archive import Archive
 from .arxiv_client import MetadataError, Paper, search_new_papers, verify_metadata
 from .briefing import BriefingData, FailedItem, briefing_paths, render_docx, render_markdown
 from .config import Config
+from .observability import traceable, tracing_enabled
 from .pdf_extract import download_pdf, extract_text
 from .summarizer import Summarizer, Summary
 
@@ -41,6 +42,7 @@ class RunResult:
     log: list[str] = field(default_factory=list)
 
 
+@traceable(run_type="chain", name="paper_review_pipeline")
 def run(
     config: Config,
     papers: list[Paper] | None = None,
@@ -156,5 +158,11 @@ def run(
     render_docx(data, docx_path)
     result.briefing_docx, result.briefing_md = docx_path, md_path
     log(f"브리핑 저장: {docx_path} / {md_path}")
+    # Observation: 토큰 사용량 집계 (논문별 사용량은 아카이브 레코드에 기록됨)
+    for line in summarizer.usage.summary_line().splitlines():
+        log(line)
+    if tracing_enabled():
+        import os
+        log(f"LangSmith 트레이싱 활성 — 프로젝트: {os.getenv('LANGSMITH_PROJECT', '(기본)')}")
     log("주의: 문서 공유는 사람 검토·승인 후 별도로 진행하세요. (자동 발송 없음)")
     return result

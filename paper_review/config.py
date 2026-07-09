@@ -38,15 +38,21 @@ class Config:
     max_candidates: int = 40
     max_summaries: int = 10
     abstract_fallback: bool = True
-    output_dir: Path = Path("output")
+    output_dir: Path = Path("report")
     archive_path: Path = Path("archive/summaries.jsonl")
     # LLM에 넘길 본문 텍스트 최대 길이(문자). 초과분은 잘라낸다.
     max_body_chars: int = 60_000
+    # 요약기 시스템 프롬프트 파일 (meta-harness 의 개선 대상 '노브').
+    # 파일이 없으면 summarizer.py 의 내장 기본 프롬프트를 쓴다.
+    prompt_path: Path = Path("prompts/summarizer_system.txt")
 
     # --- 모델 (환경변수에서 로드) ---
     openai_api_key: str | None = None
-    openai_base_url: str = "https://openrouter.ai/api/v1"
+    openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
+    # LLM-as-a-Judge / meta-harness 개선자 모델 (기본: openai_model 과 동일)
+    openai_judge_model: str = ""
+    openai_improver_model: str = ""
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> "Config":
@@ -69,8 +75,12 @@ class Config:
                 cfg.output_dir = Path(data["output_dir"])
             if "archive_path" in data:
                 cfg.archive_path = Path(data["archive_path"])
+            if "prompt_path" in data:
+                cfg.prompt_path = Path(data["prompt_path"])
 
         cfg.openai_api_key = os.getenv("OPENAI_API_KEY") or None
         cfg.openai_base_url = os.getenv("OPENAI_BASE_URL", cfg.openai_base_url)
         cfg.openai_model = os.getenv("OPENAI_MODEL", cfg.openai_model)
+        cfg.openai_judge_model = os.getenv("OPENAI_JUDGE_MODEL", cfg.openai_model)
+        cfg.openai_improver_model = os.getenv("OPENAI_IMPROVER_MODEL", cfg.openai_model)
         return cfg
