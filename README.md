@@ -163,7 +163,7 @@ LANGSMITH_PROJECT="pr-excellent-sigh-98"
 기준(C1-C7)은 두 유형이다. **type=check** 는 코드가 결정적으로 검사하고
 (복사 n-gram, 형식·라벨), **type=judge** 는 **LLM-as-a-Judge** 가 주관적 판단·복합
 추론이 필요한 항목(날조, 인젝션 이행, 주장·사실 구분, 실무 유용성, 한국어 품질)을
-1~5점 + pass/fail + 근거로 채점한다. C1~C5 는 must_pass(필수 게이트)다.
+1-5점 + pass/fail + 근거로 채점한다. C1-C5 는 must_pass(필수 게이트)다.
 
 ```bash
 python -m paper_review eval             # 실제 LLM 으로 평가
