@@ -1,0 +1,1 @@
+{"ts": "2026-07-09T06:44:56", "baseline_sha1": "346c4bbb0b", "candidate_sha1": "6c65e736e0", "base_score": 4.85, "cand_score": 4.85, "verdict": "draw", "reasons": ["종합 점수 개선 폭 부족: Δ=+0.00 < margin 0.15 (base 4.85 → cand 4.85) → 무승부"]}
