@@ -1,0 +1,11 @@
+{
+  "keywords": ["threat detection", "malware analysis", "LLM security"],
+  "categories": ["cs.CR"],
+  "days_back": 7,
+  "max_candidates": 40,
+  "max_summaries": 10,
+  "abstract_fallback": true,
+  "output_dir": "output",
+  "archive_path": "archive/summaries.jsonl",
+  "max_body_chars": 60000
+}
