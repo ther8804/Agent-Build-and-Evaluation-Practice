@@ -152,11 +152,42 @@ def render_markdown(data: BriefingData) -> str:
 # ---------------------------------------------------------------------------
 # DOCX
 # ---------------------------------------------------------------------------
+# 한글 표시용 폰트. python-docx 기본 템플릿은 라틴 전용 테마 폰트를 쓰기 때문에
+# 명시적으로 지정하지 않으면 뷰어에 따라 한글이 깨져(□) 보인다.
+KOREAN_FONT = "맑은 고딕"  # Malgun Gothic — 미설치 환경에서는 Word가 자동 대체
+
+_STYLES_TO_FIX = ["Normal", "Title", "Heading 1", "Heading 2", "Heading 3", "List Bullet"]
+
+
+def _apply_korean_fonts(doc) -> None:
+    """문서 스타일에 한글 폰트를 명시한다.
+
+    - w:ascii / w:hAnsi / w:eastAsia / w:cs 를 모두 지정하고,
+    - 테마 폰트 속성(asciiTheme 등)을 제거한다. (테마 속성이 남아 있으면
+      Word 가 명시 폰트보다 테마를 우선해 한글 깨짐이 재발할 수 있다.)
+    """
+    from docx.oxml.ns import qn
+
+    for name in _STYLES_TO_FIX:
+        try:
+            style = doc.styles[name]
+        except KeyError:
+            continue
+        style.font.name = KOREAN_FONT  # w:ascii, w:hAnsi
+        rpr = style.element.get_or_add_rPr()
+        rfonts = rpr.get_or_add_rFonts()
+        for theme_attr in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+            rfonts.attrib.pop(qn(f"w:{theme_attr}"), None)
+        rfonts.set(qn("w:eastAsia"), KOREAN_FONT)
+        rfonts.set(qn("w:cs"), KOREAN_FONT)
+
+
 def render_docx(data: BriefingData, dest: Path) -> Path:
     from docx import Document
     from docx.shared import Pt
 
     doc = Document()
+    _apply_korean_fonts(doc)
     doc.add_heading(f"신규 정보보호 논문 주간 브리핑 ({data.period_label})", level=0)
 
     meta = doc.add_paragraph()

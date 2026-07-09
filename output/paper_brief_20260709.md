@@ -2,77 +2,22 @@
 
 - 수집 카테고리: cs.CR
 - 관심 키워드: threat detection, malware analysis, LLM security
-- 요약 논문 수: 2편 / 추출 실패 0건 / 중복 제외 0건
+- 요약 논문 수: 0편 / 추출 실패 0건 / 중복 제외 2건
 
 ## 관심도 순위
 
-| 순위 | 논문 (arXiv ID) | 게재일 | 관심도 | 근거 | 요약 근거 |
-|---|---|---|---|---|---|
-| 1 | [Large Language Models (LLMs) and Generative AI in Cybersecurity and Privacy: A Survey of Dual-Use Risks, AI-Generated Malware, Explainability, and Defensive Strategies](https://arxiv.org/abs/2607.06963v1) (2607.06963v1) | 2026-07-08 | 5/5 | LLM의 사이버 보안에서의 이중적 활용 가능성은 현재와 미래의 보안 환경에 중대한 영향을 미칠 것으로 예상된다. | 본문 기반 |
-| 2 | [Determinants and Limits of LLM Security-Tool Orchestration: A Study with HexStrike-AI](https://arxiv.org/abs/2607.02873v1) (2607.02873v1) | 2026-07-03 | 4/5 | LLM 기반 보안 도구의 성능과 클라이언트의 영향을 분석한 연구로, 실무에서의 적용 가능성이 높아 관심도가 높다. | 본문 기반 |
+이번 주기에는 요약된 논문이 없습니다.
 
 ## 논문별 요약
-
-### 1. Large Language Models (LLMs) and Generative AI in Cybersecurity and Privacy: A Survey of Dual-Use Risks, AI-Generated Malware, Explainability, and Defensive Strategies
-
-- **arXiv ID**: 2607.06963v1 · **원문**: https://arxiv.org/abs/2607.06963v1
-- **저자**: Kiarash Ahi, Saeed Valizadeh
-- **게재일**: 2026-07-08 · **카테고리**: cs.CR, cs.AI, cs.CL
-- **요약 근거**: 본문 기반
-- ⚠️ [인젝션 의심] 본문에 지시문 형태의 문구가 감지됨 — 요약 내용을 사람이 검토할 것
-
-**핵심 기여**
-
-- 저자들은 LLMs와 생성 AI가 사이버 보안에서 자동화된 방어와 정교한 공격을 모두 가능하게 하며, 이로 인해 새로운 보안 프레임워크가 필요하다고 주장한다.
-- 이 논문은 LLMs의 유용성과 악의적 응용을 포괄적으로 조사하며, 제로데이 탐지, DevSecOps, 연합 학습 등 다양한 분야에서의 적용 사례를 제시한다.
-- 저자들은 LLM의 책임 있는 배포를 위한 실용적인 권장 사항으로 모델 워터마킹, 적대적 방어 및 산업 간 협력을 강조한다.
-
-**방법론**
-
-이 논문은 70개 이상의 학술 논문, 산업 보고서 및 기술 문서를 검토하여 LLMs의 사이버 보안에서의 이점과 위험을 종합적으로 분석한다. 또한, Google Play Protect, Microsoft Defender 등 다양한 플랫폼의 실제 사례를 통해 LLM의 적용 가능성을 탐구한다.
-
-**실무 적용 포인트** *(에이전트 의견 — 논문 내용과 구분됨)*
-
-- LLM을 사이버 보안에 통합할 때는 적절한 거버넌스와 윤리적 감사가 필수적이다.
-- LLM 기반 도구의 효과적인 활용을 위해 보안 전문가의 지속적인 교육과 훈련이 필요하다.
-- LLM의 악용 가능성을 줄이기 위해 모델의 투명성과 설명 가능성을 높이는 것이 중요하다.
-
-**한계**
-
-- 논문은 LLM의 악용 사례에 대한 구체적인 데이터나 사례를 충분히 제시하지 않는다.
-- LLM의 보안 취약점과 관련된 실험적 결과가 부족하다.
-
-### 2. Determinants and Limits of LLM Security-Tool Orchestration: A Study with HexStrike-AI
-
-- **arXiv ID**: 2607.02873v1 · **원문**: https://arxiv.org/abs/2607.02873v1
-- **저자**: Romain Gerard, Assmaa Zeghaider, Yan Guo
-- **게재일**: 2026-07-03 · **카테고리**: cs.SE, cs.AI, cs.CR
-- **요약 근거**: 본문 기반
-
-**핵심 기여**
-
-- 저자들은 LLM 보안 도구 오케스트레이터의 성능을 결정짓는 주요 요소로 클라이언트의 영향을 강조하며, 이는 모델과 클라이언트 간의 성능 차이를 2.1배로 나타낸다고 보고한다.
-- 연구는 774회의 실험을 통해 기존 도구의 수정과 새로운 도구의 추가가 성능 향상에 기여했음을 보여주며, 전체 해결률이 55.4%에서 72.0%로 증가했다고 주장한다.
-- 저자들은 LLM 보안 도구 오케스트레이터의 실패 원인을 분석하고, 도구 부족이 아닌 추론이나 환경에 의해 제한된다고 결론짓는다.
-
-**방법론**
-
-이 연구는 HexStrike-AI라는 오픈 소스 오케스트레이터를 사용하여 86개의 picoCTF 챌린지를 774회 실험하며, 세 가지 도구 접근 방식과 세 가지 모델/클라이언트 구성에서 성능을 평가한다. 이후 기존 도구의 수정과 새로운 도구의 추가를 통해 실패한 실험을 재실행하여 성능 향상을 측정한다.
-
-**실무 적용 포인트** *(에이전트 의견 — 논문 내용과 구분됨)*
-
-- 실무자들은 LLM 기반 보안 도구의 성능을 평가할 때 클라이언트의 영향을 고려해야 하며, 이는 도구 선택과 사용 방식에 큰 영향을 미친다.
-- 도구 오케스트레이터의 설계 시, 다양한 도구와 클라이언트 구성을 실험하여 최적의 성능을 도출할 수 있는 방법론을 개발하는 것이 중요하다.
-- 기존 도구의 수정과 새로운 도구의 추가가 성능 향상에 기여할 수 있으므로, 지속적인 개선과 업데이트가 필요하다.
-
-**한계**
-
-- 이 연구는 단일 벤치마크(picoCTF)를 사용하였으며, 다른 모델에 대한 일반화 가능성은 가설로 남아 있다.
-- 수정된 도구와 새로운 도구의 효과를 완전히 분리할 수 없으며, 실험은 이전에 실패한 사례만 재실행하여 편향된 결과를 초래할 수 있다.
 
 ## [추출 실패] 목록
 
 - 없음
+
+## 중복 제외 (아카이브에 기존 요약 존재)
+
+- Large Language Models (LLMs) and Generative AI in Cybersecurity and Privacy: A Survey of Dual-Use Risks, AI-Generated Malware, Explainability, and Defensive Strategies (2607.06963v1)
+- Determinants and Limits of LLM Security-Tool Orchestration: A Study with HexStrike-AI (2607.02873v1)
 
 ---
 
